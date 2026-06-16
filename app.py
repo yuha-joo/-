@@ -1,114 +1,170 @@
 import streamlit as st
-from google import genai
-from google.genai import types
+import random
 
 # 페이지 설정
 st.set_page_config(
-    page_title="🍪 간식 추천기",
-    page_icon="🍪",
+    page_title="집안일 난이도 추천기",
+    page_icon="🏠",
+    layout="centered"
 )
 
-st.title("🍪 AI 간식 추천기")
-st.write("먹고 싶은 상황을 말하면 간식을 추천해 드립니다!")
+# CSS
+st.markdown("""
+<style>
+div.stButton > button {
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    font-size: 24px;
+    font-weight: bold;
+}
 
-# API 키 확인
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except Exception:
-    st.error("GEMINI_API_KEY가 Secrets에 설정되어 있지 않습니다.")
-    st.stop()
+.result-box {
+    padding: 20px;
+    border-radius: 15px;
+    background-color: #f0f8ff;
+    border: 2px solid #4CAF50;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# Gemini 클라이언트 생성
-try:
-    client = genai.Client(api_key=api_key)
-except Exception as e:
-    st.error(f"Gemini 클라이언트 생성 실패: {e}")
-    st.stop()
+st.title("🏠 집안일 난이도 추천기")
+st.write("원하는 난이도를 선택하면 해당 수준의 집안일을 추천해드립니다!")
 
-# 채팅 기록 초기화
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {
-            "role": "assistant",
-            "content": (
-                "안녕하세요! 🍩\n\n"
-                "상황이나 취향을 말해주시면 간식을 추천해드릴게요.\n"
-                "예시:\n"
-                "- 공부하면서 먹을 간식 추천\n"
-                "- 다이어트 중 먹을 간식\n"
-                "- 편의점에서 살 수 있는 간식\n"
-                "- 달달한 간식 추천"
-            ),
-        }
+# 집안일 데이터
+chores = {
+    1: [
+        "책상 정리하기",
+        "쓰레기 버리기",
+        "물컵 설거지하기",
+        "신발 정리하기",
+        "침대 정돈하기"
+    ],
+    2: [
+        "식탁 닦기",
+        "분리수거 정리하기",
+        "욕실 세면대 청소",
+        "전자레인지 닦기",
+        "냉장고 정리하기"
+    ],
+    3: [
+        "설거지하기",
+        "청소기 돌리기",
+        "빨래 개기",
+        "화장실 청소",
+        "창틀 먼지 제거"
+    ],
+    4: [
+        "바닥 물걸레질",
+        "주방 전체 청소",
+        "창문 청소",
+        "이불 세탁",
+        "베란다 청소"
+    ],
+    5: [
+        "대청소 진행하기",
+        "냉장고 전체 비우고 청소",
+        "옷장 정리 및 정돈",
+        "집 전체 정리정돈",
+        "창고 정리하기"
     ]
+}
 
-# 기존 대화 표시
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+difficulty_info = {
+    1: "⭐ 매우 쉬움",
+    2: "⭐⭐ 쉬움",
+    3: "⭐⭐⭐ 보통",
+    4: "⭐⭐⭐⭐ 어려움",
+    5: "⭐⭐⭐⭐⭐ 매우 어려움"
+}
 
-# 사용자 입력
-if prompt := st.chat_input("어떤 간식을 찾고 있나요?"):
-    # 사용자 메시지 저장
-    st.session_state.messages.append(
-        {"role": "user", "content": prompt}
+# 세션 상태 초기화
+if "selected_task" not in st.session_state:
+    st.session_state.selected_task = None
+
+if "selected_level" not in st.session_state:
+    st.session_state.selected_level = None
+
+st.subheader("난이도 선택")
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    if st.button("1"):
+        st.session_state.selected_level = 1
+        st.session_state.selected_task = random.choice(chores[1])
+
+with col2:
+    if st.button("2"):
+        st.session_state.selected_level = 2
+        st.session_state.selected_task = random.choice(chores[2])
+
+with col3:
+    if st.button("3"):
+        st.session_state.selected_level = 3
+        st.session_state.selected_task = random.choice(chores[3])
+
+with col4:
+    if st.button("4"):
+        st.session_state.selected_level = 4
+        st.session_state.selected_task = random.choice(chores[4])
+
+with col5:
+    if st.button("5"):
+        st.session_state.selected_level = 5
+        st.session_state.selected_task = random.choice(chores[5])
+
+st.markdown("---")
+
+# 결과 표시
+if st.session_state.selected_task:
+    level = st.session_state.selected_level
+
+    st.markdown(
+        f"""
+        <div class="result-box">
+        추천 집안일<br><br>
+        {st.session_state.selected_task}
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    st.write("")
+    st.success(f"난이도 {level} - {difficulty_info[level]}")
 
-    with st.chat_message("assistant"):
-        try:
-            with st.spinner("간식을 찾는 중..."):
+    if st.button("🔄 다시 추천받기"):
+        st.session_state.selected_task = random.choice(chores[level])
+        st.rerun()
 
-                # 최근 대화 컨텍스트 구성
-                history_text = ""
-                for msg in st.session_state.messages[-10:]:
-                    role = "사용자" if msg["role"] == "user" else "AI"
-                    history_text += f"{role}: {msg['content']}\n"
+st.markdown("---")
 
-                system_prompt = """
-너는 친절한 간식 추천 전문가다.
+# 오늘의 추천
+st.subheader("🎲 오늘의 랜덤 집안일")
 
-규칙:
-1. 사용자의 상황과 취향을 고려해 추천한다.
-2. 추천 이유를 함께 설명한다.
-3. 가능하면 3~5개의 간식을 추천한다.
-4. 답변은 한국어로 한다.
-5. 간결하면서도 도움이 되게 답변한다.
+if st.button("오늘의 집안일 뽑기"):
+    random_level = random.randint(1, 5)
+    task = random.choice(chores[random_level])
+
+    st.info(
+        f"""
+난이도: {random_level}
+
+{difficulty_info[random_level]}
+
+추천 집안일: {task}
 """
+    )
 
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash-lite",
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_prompt,
-                        temperature=0.8,
-                    ),
-                    contents=history_text,
-                )
-
-                answer = response.text
-
-                st.markdown(answer)
-
-                st.session_state.messages.append(
-                    {
-                        "role": "assistant",
-                        "content": answer,
-                    }
-                )
-
-        except Exception as e:
-            error_msg = (
-                "죄송합니다. 응답 생성 중 오류가 발생했습니다.\n\n"
-                f"오류 내용: {str(e)}"
-            )
-
-            st.error(error_msg)
-
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": error_msg,
-                }
-            )
+# 하단 안내
+with st.expander("ℹ️ 난이도 기준 보기"):
+    st.write("""
+    - 1 : 금방 끝나는 간단한 집안일
+    - 2 : 가벼운 정리 및 청소
+    - 3 : 일반적인 집안일
+    - 4 : 체력이 필요한 집안일
+    - 5 : 시간이 많이 드는 대규모 정리
+    """)
